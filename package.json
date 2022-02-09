@@ -7,7 +7,7 @@
     "sk"
   ],
 
-  "repository": "https://github.com/Moderocky/Skript-Grammar",
+  "repository": "https://github.com/Moderocky/skript-syntax",
   "license": "MIT",
   "engines": {
     "atom": ">=1.0.0 <2.0.0"
