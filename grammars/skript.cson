@@ -16,7 +16,7 @@ repository:
     comment:
         patterns: [
             {
-                match: '(?<!#)#[^#\\n\\r]*$'
+                match: '(?<!#)#[^#\\n\\r]{0,1}[^\\n\\r]*$'
                 name: 'comment.line.number-sign.skript'
             }
         ]
@@ -28,11 +28,13 @@ repository:
             { include: '#variables' }
             { include: '#values' }
             { include: '#expressions' }
+            { include: '#effects' }
         ]
     members:
         patterns: [
             { include: '#member_options' }
             { include: '#member_aliases' }
+            { include: '#member_aliases_entry' }
             { include: '#member_event' }
             { include: '#member_command' }
             { include: '#member_command_options' }
@@ -54,6 +56,21 @@ repository:
                 captures:
                     1: name: 'keyword.control.event'
                     2: name: 'punctuation.definition.section.start'
+            }
+        ]
+    member_aliases_entry:
+        patterns: [
+            {
+                match: '^(?:\\s+)(\\w+) ?(=)([\\w ,]+)\\s*$'
+                captures:
+                    1: name: 'variable.other.alias'
+                    2: name: 'markup.bold'
+                    3: patterns: [
+                        {
+                            match: '\\w+'
+                            name: 'entity.name.type.alias'
+                        }
+                    ]
             }
         ]
     member_event:
@@ -110,7 +127,7 @@ repository:
     member_command_name:
         patterns: [
             {
-                match: '(/)(\\w+)'
+                match: '(?<!<)(/)?(\\w+)'
                 captures:
                     1: name: 'markup.bold'
                     2: name: 'entity.name.function.command'
@@ -119,14 +136,14 @@ repository:
     member_command_argument:
         patterns: [
             {
-                match: '(<)(\\w+)(>)'
+                match: '(<)(.+?)(>)'
                 captures:
                     1: name: 'markup.bold'
                     2: name: 'variable.other'
                     3: name: 'markup.bold'
             }
             {
-                match: '(\\[<)(\\w+)(>\\])'
+                match: '(\\[<)(.+?)(>\\])'
                 captures:
                     1: name: 'markup.bold'
                     2: name: 'variable.other'
@@ -136,15 +153,78 @@ repository:
     member_command_options:
         patterns: [
             {
-                match: '(aliases|description|usage|executable by|cooldown|cooldown message|cooldown bypass|cooldown storage|permission|(?:no )?permission message): (.+)'
+                match: '(cooldown): (.+)'
                 captures:
                     1: name: 'keyword.other'
                     2: patterns: []
             }
             {
+                match: '(executable by): (.+)'
+                captures:
+                    1: name: 'keyword.other'
+                    2: name: 'entity.name.type.alias'
+            }
+            {
+                match: '(description|cooldown message|(?:no )?permission message): (.+)'
+                captures:
+                    1: name: 'keyword.control'
+                    2:
+                        name: 'string.unquoted'
+                        patterns: [
+                            { include: '#literal_string_inputs' }
+                        ]
+            }
+            {
+                match: '(aliases): (.+)'
+                captures:
+                    1: name: 'keyword.control'
+                    2: patterns: [
+                        { include: '#member_command_name' }
+                    ]
+            }
+            {
+                match: '(usage): (.+)'
+                captures:
+                    1: name: 'keyword.control'
+                    2: patterns: [
+                        { include: '#member_command_name' }
+                        { include: '#member_command_argument' }
+                    ]
+            }
+            {
+                match: '(permission|cooldown bypass): (.+)'
+                captures:
+                    1: name: 'keyword.control'
+                    2: patterns: [
+                        { include: '#member_command_permission' }
+                    ]
+            }
+            {
+                match: '(cooldown storage): (.+)'
+                captures:
+                    1: name: 'keyword.control'
+                    2: patterns: [
+                        { include: '#variables' }
+                    ]
+            }
+            {
                 match: '(trigger):'
                 captures:
                     1: name: 'keyword.control'
+            }
+        ]
+    member_command_permission:
+        patterns: [
+            {
+                match: '([\\w]+)'
+                captures:
+                    1: name: 'variable.other.permission'
+            }
+            {
+                match: '(?<=\\w)(\\.)([\\w*]+)'
+                captures:
+                    1: name: 'markup.bold'
+                    2: name: 'variable.other.permission'
             }
         ]
     sections:
@@ -156,7 +236,7 @@ repository:
     section_if:
         patterns: [
             {
-                match: '(?<=\\s)((?:else)? if) (.+)(:)'
+                match: '^(?:\\s+)((?:else )?if) (.+)(:)'
                 captures:
                     0: name: 'meta.section'
                     1: name: 'keyword.control'
@@ -166,7 +246,7 @@ repository:
                     3: name: 'punctuation.definition.section.start'
             }
             {
-                match: '(?<=\\s)(else)(:)'
+                match: '^(?:\\s+)(else)(:)'
                 captures:
                     0: name: 'meta.section'
                     1: name: 'keyword.control'
@@ -176,7 +256,7 @@ repository:
     section_loop:
         patterns: [
             {
-                match: '(?<=\\s)(loop) (.+)(:)'
+                match: '^(?:\\s+)(loop) (.+)(:)'
                 captures:
                     0: name: 'meta.section'
                     1: name: 'keyword.control'
@@ -189,7 +269,7 @@ repository:
     section_while:
         patterns: [
             {
-                match: '(?<=\\s)(while) (.+)(:)'
+                match: '^(?:\\s+)(while) (.+)(:)'
                 captures:
                     0: name: 'meta.section'
                     1: name: 'keyword.control'
@@ -240,6 +320,7 @@ repository:
                     1: name: 'markup.bold'
                 patterns: [
                     { include: '#input' }
+                    { include: '#variable_list_separator' }
                 ]
                 name: 'variable.other.local'
             }
@@ -252,14 +333,31 @@ repository:
                     1: name: 'markup.bold'
                 patterns: [
                     { include: '#input' }
+                    { include: '#variable_list_separator' }
                 ]
                 name: 'variable.other'
+            }
+        ]
+    variable_list_separator:
+        patterns: [
+            {
+                match: "(::\\*)(?=})"
+                captures:
+                    0: name: 'punctuation.separator.variable'
+                    1: name: 'markup.bold'
+            }
+            {
+                match: "(::)"
+                captures:
+                    0: name: 'punctuation.separator.variable'
+                    1: name: 'markup.bold'
             }
         ]
     literals:
         patterns: [
             { include: '#literal_string' }
             { include: '#literal_number' }
+            { include: '#literal_colour' }
         ]
     literal_string:
         patterns: [
@@ -272,7 +370,7 @@ repository:
                     0: name: 'punctuation.definition.string.end'
                 name: 'string.quoted.double'
                 patterns: [
-                    { include: '#input' }
+                    { include: '#literal_string_inputs' }
                 ]
             }
         ]
@@ -287,6 +385,57 @@ repository:
                 name: 'constant.numeric.decimal'
             }
         ]
+    literal_string_inputs:
+        patterns: [
+            { include: '#literal_string_code' }
+            { include: '#literal_string_markup' }
+            { include: '#input' }
+        ]
+    literal_string_code:
+        patterns: [
+            {
+                match: '&[A-Fa-f0-9kLlLmMnNoOrR]'
+                captures:
+                    0: name: 'keyword.type.colour'
+            }
+        ]
+    literal_string_markup:
+        patterns: [
+            {
+                match: '<(##)[A-Fa-f0-9]{3,6}>'
+                captures:
+                    0: name: 'keyword.type.markup'
+                    1: name: 'markup.bold'
+            }
+            {
+                match: '<(bold|italic|underline|strikethrough|magic|reset)>'
+                captures:
+                    0: name: 'keyword.type.markup'
+            }
+            {
+                match: '<(black|(?:dark )?(?:blue|green|aqua|red|purple|gr[ae]y)|cyan|gold|orange|yellow|white|magenta|light (?:gr[ae]y|green|purple)?)>'
+                captures:
+                    0: name: 'keyword.type.markup'
+            }
+        ]
+    literal_string_link:
+        patterns: [
+            {
+                match: 'https?://[^\\s"]+'
+                captures:
+                    0: name: 'markup.underline'
+            }
+            {
+                match: '<(bold|italic|underline|strikethrough|magic|reset)>'
+                captures:
+                    0: name: 'keyword.type.markup'
+            }
+            {
+                match: '<(black|(?:dark )?(?:blue|green|aqua|red|purple|gr[ae]y)|cyan|gold|orange|yellow|white|magenta|light (?:gr[ae]y|green|purple)?)>'
+                captures:
+                    0: name: 'keyword.type.markup'
+            }
+        ]
     input:
         patterns: [
             {
@@ -298,7 +447,7 @@ repository:
                 endCaptures:
                     0: name: 'punctuation.definition.input.end'
                     1: name: 'markup.bold'
-                name: 'meta.input'
+                name: 'punctuation.reset' # this resets the colour
                 patterns: [
                     { include: '#code' }
                 ]
@@ -334,4 +483,18 @@ repository:
             }
         ]
     expressions:
+        comment: 'Used to catch any key expressions that need formatting.'
         patterns: []
+    effects:
+        comment: 'Used to catch any key effects that need formatting.'
+        patterns: [
+            { include: '#effect_stop' }
+        ]
+    effect_stop:
+        patterns: [
+            {
+                match: '^(?:\\s+)(stop|cancel)'
+                captures:
+                    1: name: 'markup.strike'
+            }
+        ]
